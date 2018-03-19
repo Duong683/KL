@@ -1,0 +1,1 @@
+"detect malicious browser extension" 

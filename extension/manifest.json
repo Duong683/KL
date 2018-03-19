@@ -1,0 +1,27 @@
+{
+  "manifest_version": 2,
+
+  "name": "Interceptor webRequests",
+  "description": "Interceptor webRequests from Google Chrome",
+  "version": "1.0",
+
+  "browser_action": {
+    "default_icon": "interceptor_16x16.png",
+    "default_title": "Click to show webRequests",
+    "default_popup": "popup.html"
+  },
+
+  "background": {
+    "page": "background.html",
+    "persistent": true
+  },
+  
+  "permissions": [
+    "webRequest", 
+    "webRequestBlocking", 
+    "cookies", 
+    "http://*/*", 
+    "https://*/*",
+    "contextMenus"
+  ]
+}
