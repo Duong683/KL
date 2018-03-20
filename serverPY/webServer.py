@@ -1,10 +1,12 @@
+import os.path
 import tornado.ioloop
 import tornado.web
 import webbrowser
 
 class MainHandler(tornado.web.RequestHandler):
 	def get(self):
-		self.write("serverTest")
+		print ("trigge")
+		self.render('index.html', test="Hello, world!")
 
 #khoi tao server cho web hien thi log
 class WebServer():
@@ -13,10 +15,12 @@ class WebServer():
 	#cau hinh Port = 8888
 	def __init__(self):
 		ws  = tornado.web.Application([
-			(r"/", MainHandler),
-		])
+			(r"/", MainHandler)],
+			static_path = os.path.join(os.path.dirname(__file__), "static"),
+			template_path = os.path.join(os.path.dirname(__file__), "templates"))
+
 		self.http_server = tornado.httpserver.HTTPServer(ws)
-		self.port = 8888
+		self.port = 6683
 		self.web_url = "http://localhost:{}/".format(self.port)
 
 	#tao loop - start server
