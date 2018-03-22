@@ -2,6 +2,7 @@ import os.path
 import tornado.ioloop
 import tornado.web
 import webbrowser
+<<<<<<< HEAD
 import time
 import json
 from threading import Thread
@@ -34,17 +35,36 @@ class MainHandler(tornado.web.RequestHandler):
 
 #khoi tao server cho web hien thi log
 class WebServer():
+=======
+
+class MainHandler(tornado.web.RequestHandler):
+	def get(self):
+		print ("trigge")
+		self.render('index.html', test="Hello, world!")
+
+#khoi tao server cho web hien thi log
+class WebServer():
+
+>>>>>>> f857e120d9b298dc9f238dca5d90785c8ad1643f
 	#cau hinh Handle = MainHandle
 	#cau hinh Port = 8888
 	def __init__(self):
 		ws  = tornado.web.Application([
+<<<<<<< HEAD
 			(r"/", MainHandler),
 			(r"/ShowLog", ShowLog)],
+=======
+			(r"/", MainHandler)],
+>>>>>>> f857e120d9b298dc9f238dca5d90785c8ad1643f
 			static_path = os.path.join(os.path.dirname(__file__), "static"),
 			template_path = os.path.join(os.path.dirname(__file__), "templates"))
 
 		self.http_server = tornado.httpserver.HTTPServer(ws)
+<<<<<<< HEAD
 		self.port = 6685
+=======
+		self.port = 6683
+>>>>>>> f857e120d9b298dc9f238dca5d90785c8ad1643f
 		self.web_url = "http://localhost:{}/".format(self.port)
 
 	#tao loop - start server
@@ -87,6 +107,7 @@ class WebServer():
 				return True
 		return False
 
+<<<<<<< HEAD
 	def setQueue(self, n: str):
 		global data
 		data['url'] = n
@@ -97,3 +118,10 @@ class WebServer():
 #if __name__ == "__main__":
 #	main = WebServer()
 #	main.run()
+=======
+
+
+if __name__ == "__main__":
+	main = WebServer()
+	main.run()
+>>>>>>> f857e120d9b298dc9f238dca5d90785c8ad1643f
