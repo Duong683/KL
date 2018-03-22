@@ -65,6 +65,13 @@ var blacklistedIds = ["none"],
 	postmanCheckTimeout = null,
 	isPostmanOpen = true;
 
+// filters requests before sending it to postman
+function filterCapturedRequest(request) {
+    var patt = new RegExp(appOptions.filterRequestUrl, "gi");
+    var validRequestTypes = ["xmlhttprequest", "main_frame", "sub_frame"];
+    return (_.contains(validRequestTypes, request.type) && request.url.match(patt))
+}
+
 // returns an edited header object with retained postman headers
 function onBeforeSendHeaders(details) {
 	//console.log("2: ", details.method, details.url);
@@ -73,17 +80,19 @@ function onBeforeSendHeaders(details) {
 
 // for filtered requests sets a key in requestCache
 function onBeforeRequest(details) {
-    requestCache[details.requestId] = details;
-    //console.log(details.method, details.url);
+    if (filterCapturedRequest(details)) {
+    	requestCache[details.requestId] = details;
+    	console.log(details.method + " " + details.url);
+  }
 }
 
 // for filtered requests it sets the headers on the request in requestcache
 function onSendHeaders(details) {
     if (requestCache.hasOwnProperty(details.requestId)) {
-    	console.log(details.method, details.url);
+    	//console.log(details.method, details.url);
       //sendCapturedRequestToPostman(details.requestId);
     } else {
-      console.log("Hidden request:", details.method, details.url);
+      //console.log("Hidden request:", details.method, details.url);
     }
   //}
 }
@@ -92,7 +101,6 @@ function onSendHeaders(details) {
 // then clears the cache
 function sendCapturedRequestToPostman(reqId){
   var loggerMsg = "<span>" + requestCache[reqId].method + "&nbsp;&nbsp;" + "</span><span class=\"captured-request-url\">" + (requestCache[reqId].url).substring(0, 150) + "</span>";
-
   chrome.runtime.sendMessage(
       {
         "postmanMessage": {

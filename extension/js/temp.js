@@ -587,7 +587,7 @@ function convertRedirectResponse(details) {
 function onBeforeRequest(details) {
   if (filterCapturedRequest(details) && !isPostmanRequest(details) && appOptions.isCaptureStateEnabled) {
     requestCache[details.requestId] = details;
-    console.log("Request " + details.requestId+" added to cache");
+    console.log("Request " + details.url+" added to cache");
   }
 }
 
@@ -607,10 +607,12 @@ function onSendHeaders(details) {
     if (requestCache.hasOwnProperty(details.requestId)) {
       //var req = requestCache[details.requestId];
       //req.requestHeaders = details.requestHeaders;
+      
       sendCapturedRequestToPostman(details.requestId);
     } else {
-      console.log("Error - Key not found ", details.requestId, details.method, details.url);
-      console.log(requestCache);
+    	//console.log(details.url);
+      //console.log("Error - Key not found ", details.requestId, details.method, details.url);
+      //console.log(requestCache);
     }
   //}
 }
@@ -625,7 +627,7 @@ function isMethodWithBody(method) {
 // then clears the cache
 function sendCapturedRequestToPostman(reqId){
   var loggerMsg = "<span>" + requestCache[reqId].method + "&nbsp;&nbsp;" + "</span><span class=\"captured-request-url\">" + (requestCache[reqId].url).substring(0, 150) + "</span>";
-
+  console.log("trigger");
   /*
   var request = requestCache[reqId];
   var methodWithBody = isMethodWithBody(request.method);
