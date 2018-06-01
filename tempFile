@@ -1,0 +1,24 @@
+Tài liệu đào tạo viết mã khai thác
+1. Viết shellcode
+Kiến thức cần đạt được:
+
+Hiểu phương pháp xây dựng shellcode
+Xây dựng hoặc sửa một đoạn shellcode có sẵn theo mục đích của mình
+1. Viết shellcode trên hệ thống windows
+Viết một đoạn shellcode cho phép chạy chương trình hiển chạy CALC.EXE
+Viết một đoạn shellcode cho phép kết nối tới địa chỉ 127.0.0.1:1337 và thực hiện các lệnh được gửi từ xa
+Mã chương trình để test shellcode:
+
+char* Shellcode[] = {0x90,0x90,0x90,0x90,0x90,0x90};
+DWORD oldProtect = 0;
+if (VirtualProtect( Shellcode, sizeof(Shellcode), PAGE_EXECUTE_READWRITE, &oldProtect))
+{
+    funcShell = (int (*)()) pShellcode;
+    (int)(*funcShell)();
+}
+
+2. Viết shellcode trên hệ thống linux
+Viết một đoạn shellcode cho phép kết nối tới địa chỉ 127.0.0.1:1337 và thực hiện các lệnh được gửi từ xa ```C #include #include
+char *shellcode = "\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90";
+
+int main(void) { fprintf(stdout,"Length: %d\n",strlen(shellcode)); ((void()()) shellcode)(); return 0; }
