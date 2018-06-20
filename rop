@@ -1,0 +1,5 @@
+0x7c365b99: pop eax; ret; 
+0x7c372a76: call dword ptr [eax];
+0x7c366857: pop ecx; pop ebp; ret;
+0x7c365703: pop esi; pop ebx; pop ebp; ret; 
+0x7c382648: pop esi; pop ebx; pop edi; pop ebp; ret; 
