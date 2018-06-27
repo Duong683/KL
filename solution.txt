@@ -1,0 +1,38 @@
+------------------2.3----------------------------
+
+Hàm sprintf(Dest, "%s", v3) ghi nội dung từ v3 -> Dest
+Hàm sprintf sẽ đọc từ v3 cho đến khi gặp ký tự /x00 thì dừng lại, vì vậy nếu ta send 1 payload có nội dung 'a'*31 + '\x00\x00\x00\x00\x00' thì hàm sprintf chỉ ghi 31 ký tự đầu vào Dest nhưng hàm recv lại nhận được 36 ký tự
+Vì vậy nội dung tại Dest + 31 -> 36 sẽ không bị ghi đè. Khi chương trình thực hiện hàm send(Dest, 36) thì ta có thể leak đc địa chỉ tại vùng nhớ Dest + 31 -> 35. Tại đó có 1 địa chỉ thuộc stack -> tính ra địa chỉ stack
+Ta xây dựng ROP gọi hàm virtualProtect thay đổi quyền của vùng stack -> rwx. Sau đó nhảy đến shellcode tại stack và thực hiện nó
+Vì sprintf chỉ đọc đến '\x00' nên ta cần send nhiều đoạn payload nhỏ để tạo thành payload ta mong muốn
+vd: payload1 = 'bbbbbbbbbbbbABCD'
+	payload2 = 'aaaaaaaaaaa\x00'
+ -> buf 	  = 'aaaaaaaaaaa\x00ABCD'
+Lợi dụng điều này để ghi ký tự '\x00' vào payload
+
+------------------3.1----------------------------
+Hàm sprintf(v6, Format) tại 0x00401193 bị lỗi format string, từ đây ta có thể leak được địa chỉ của buf nếu nhập tham số phù hợp
+Hàm printf(Dst) tại 0x00401295 bị lỗi format string, ta sử dụng nó để ghi địa chỉ của buf ta vừa leak được vào RET
+Ta đặt shellcode ở đầu buf
+-> khi chương trình chạy đến RET, nó sẽ nhảy vào đầu buf và thực hiện shellcode
+
+------------------3.2----------------------------
+Hàm sprintf((char *)Dst, Format) tại 0x00401348 bị lỗi format string, từ đây ta có thể leak được địa chỉ của stack và địa chỉ base của chương trình khi được load lên
+Hàm printf(Dst) tại 0x004014E4 bị lỗi format string, cho phép ta ghi nội dung tùy ý vào địa chỉ mong muốn
+-> Sử dụng hàm này để ghi ROP vào địa chỉ mong muốn
+Chương trình có load 1 dynamic dll là GenId.dll. Ta có thể sử dụng 1 số chuỗi rop trong dll này vì địa chỉ của nó không thay đổi trong quá trình chạy
+ROP có dạng:
+	Gọi hàm virtualProtect để chuyển quyền của vùng stack -> rwx
+	Gọi hàm sprintf để ghi shellcode vào đầu stack. Tránh cho shellcode bị crash trong khi chạy
+	nhảy đến shellcode
+
+------------------3.3----------------------------
+Bài 3.3 làm tương tự bài 3.2
+
+------------------3.4----------------------------
+Ta thấy hàm sprintf(dest, buf) tại 0x08048a2a bị lỗi format string, ta có thể leak các thông tin trong stack
+-> Ta leak được địa chỉ của buf và 1 địa chỉ nằm trong libc-2.27.so
+Từ địa chỉ nằm trong trong libc-2.27.so ta tính đc base libc -> tính được addr của hàm mprotect
+Ta xây dựng ROP gọi hàm mprotect cấp quyền rwx cho vùng nhớ trên stack sau đó nhảy đến shellcode trên stack để chạy shellcode
+Ta thấy hàm printf(buf) tại 0x08048c62 bị lỗi format string, ta có thể ghi nội dung tùy ý vào địa chỉ mong muốn
+-> Ghi ROP = lỗi format string
